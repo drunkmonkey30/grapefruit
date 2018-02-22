@@ -8,6 +8,5 @@ class Player:
     # helps determine difficulty of questions to give
     level = None
 
-    def __init__(self, name="Joe", position, level):
-        #self.name =
+    def __init__(self, name, position, level):
         pass
