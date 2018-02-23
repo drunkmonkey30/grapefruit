@@ -18,6 +18,7 @@
 
 from animation_chain import AnimationChain
 from led_manager import LedManager
+from animation import Animation
 import threading
 import time
 
@@ -125,8 +126,12 @@ class LedAnimationManager:
                 # release lock on the animation dictionary
                 # ledAnim.led_anim_lock.release()
 
-                for i in range(0, ledAnim.led_man.numLeds):
-                    ledAnim.led_man.printLedValue(i)
+                #for i in range(0, ledAnim.led_man.numLeds):
+                #    ledAnim.led_man.printLedValue(i)
+
+                # tell led manager to send out values
+                ledAnim.led_man.update_leds()
+
                 # update initial time for next iteration
                 initial_time = time.clock()
 
@@ -138,7 +143,7 @@ class LedAnimationManager:
                 # ledAnim.animation_thread_cancel_lock.release()
                 return
         # do not exit, release lock
-    # ledAnim.animation_thread_cancel_lock.release()
+        # ledAnim.animation_thread_cancel_lock.release()
 
 
 if __name__ == '__main__':

@@ -9,6 +9,16 @@ class AnimationChain:
 	current_anim = 0
 	done = None
 
+	"""
+	to create a chain of animations, first create animations as shown in the animation.py file
+	then create a chain like so:
+	
+	chain = AnimationChain([anim1, anim2, anim3, ...], 3)
+	this will create a chain with anim1->anim2->anim3->anim1...
+	that will cycle 3 times
+	
+	specify zero for infinitely repeating
+	"""
 	def __init__(self, animations=None, repititions=0):
 		self.animation_chain = []
 		if not animations == None:

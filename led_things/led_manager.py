@@ -1,11 +1,12 @@
-
+import python_i2c
 
 # storage area and manager for LEDs 
 # functionality for adding leds, changing their color
 # also provides the bytearray used to send it across the i2c bus
 class LedManager:
 	numLeds 	= 0
-	ledValues	= bytearray()
+	led_values	= bytearray()
+	i2c_handle 	= 0
 
 	# initialize led manager with specified number of leds
 	# initial color of leds is 0,0,0 (off)
@@ -13,10 +14,22 @@ class LedManager:
 		for i in range(n):
 			self.addLed()
 
+		self.i2c_handle = python_i2c.i2c_open()
+		print("i2c handle:" + str(self.i2c_handle))
+
+	def close(self):
+		python_i2c.i2c_close(self.i2c_handle)
+
+	# uses my python lib to send led values to the microcontroller driving the leds
+	def update_leds(self):
+		self.led_values.insert(0, 0x01)
+		python_i2c.i2c_send(self.i2c_handle, 0x1a, self.led_values)
+		#print(self.led_values)
+		self.led_values.pop(0)
 
 	# add an led with specified color
 	def addLed(self, r = 0, g = 0, b = 0):
-		self.ledValues.append(0); self.ledValues.append(0); self.ledValues.append(0)
+		self.led_values.append(0); self.led_values.append(0); self.led_values.append(0)
 		self.set_color(self.numLeds, r, g, b)
 		self.numLeds += 1
 
@@ -35,15 +48,14 @@ class LedManager:
 		if b > 255: b = 255
 
 		#print(led, r, g, b)
-
-		self.ledValues[3*led] 	= r
-		self.ledValues[3*led+1] = g
-		self.ledValues[3*led+2] = b
+		self.led_values[3 * led] 	= g
+		self.led_values[3 * led + 1] = r
+		self.led_values[3 * led + 2] = b
 
 	# get rgb values of specified led
 	# DOES NOT DO BOUNDS CHECKING
 	def getColor(self, led):
-		return self.ledValues[3*led], self.ledValues[3*led+1], self.ledValues[3*led+2]
+		return self.led_values[3 * led + 1], self.led_values[3 * led], self.led_values[3 * led + 2]
 
 
 	# change a color by a positive or negative value

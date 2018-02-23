@@ -147,8 +147,16 @@ static PyMethodDef PythonI2cMethods[] =
 	{NULL, NULL, 0, NULL}
 };
 
+static struct PyModuleDef python_i2c_module = {
+	PyModuleDef_HEAD_INIT,
+	"python_i2c",
+	NULL,
+	-1,
+	PythonI2cMethods
+};
 
-PyMODINIT_FUNC initpython_i2c(void)
+PyMODINIT_FUNC PyInit_python_i2c(void)
 {
-	(void) Py_InitModule("python_i2c", PythonI2cMethods);
+	//(void) Py_InitModule("python_i2c", PythonI2cMethods);
+	return PyModule_Create(&python_i2c_module);
 }

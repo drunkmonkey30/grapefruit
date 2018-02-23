@@ -1,6 +1,5 @@
 
 
-
 # performs linear interpolation using supplied animation and frame delta
 def linear_interpolation(animation, delta):
 	#return v0 + t * (v1 - v0)
@@ -24,14 +23,22 @@ class Animation:
 	initial  = (0,0,0)
 	end 	 = (0,0,0)
 	step 	 = None #[] # BUG list is being shared here, need to make them specific to instance of animation
-					# ^ attempted fix, 2/5/18
+					# ^ attempted fix, 2/5/18 seems to work
 	
 	duration = 0.0
 	total_time = 0.0
 
 	interpolation_func = None
 
-
+	"""
+	create an animation like so:
+	
+	anim = Animation( (0,0,0), (0,255,0), 10 )
+	this will create an animation that starts the led at RGB value 0,0,0 and increases green to 255 (max value)
+	over a duration of 10 seconds.
+	
+	to chain these together, see the animation_chain.py file
+	"""
 	def __init__(self, RGB_start=(0,0,0), RGB_end=(0,0,0), duration=0.0, interpolation_func=linear_interpolation):
 		self.initial = RGB_start #(int(RGB_start[0]),int(RGB_start[1]),int(RGB_start[2]))
 		self.end = RGB_end #(int(RGB_end[0]),int(RGB_end[1]),int(RGB_end[2]))
