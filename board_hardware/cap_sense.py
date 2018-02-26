@@ -4,7 +4,11 @@
 # this class opens an i2c handle that SHOULD be closed when we are done,
 #       so don't forget to call close on an instance of this class
 
-import python_i2c
+try:
+    import python_i2c
+except:
+    print("*** ERROR: python_i2c module not found, continuing without it")
+
 import threading
 import math
 import time
@@ -87,7 +91,7 @@ class CapacitiveSensors:
     # checks if a sensor is active (something is touching it)
     # returns true or false
     def is_sensor_active(self, sensor_number):
-        return self.sensor_state[sensor_number // 8] & (1 << (8 - (sensor_number // 8))) != 0
+        return self.sensor_state[self.sensor_byte_count - 1 - (sensor_number // 8)] & (1 << (sensor_number % 8)) != 0
 
 
 if __name__ == "__main__":
@@ -96,7 +100,13 @@ if __name__ == "__main__":
 
     print(cap_sense.sensor_byte_count, cap_sense.i2c_handle, cap_sense.time_interval)
 
-    print("starting update thread...")
+    print("testing sensor state check")
+    cap_sense.sensor_state = bytearray.fromhex('F1 7b 02')
+    print(cap_sense.sensor_state)
+    for i in range(0, cap_sense.num_sensors):
+        print("sensor #" + str(i) + ": " + str(cap_sense.is_sensor_active(i)))
+
+    print("testing update thread...")
     cap_sense.start_update_thread()
     try:
         while True:
