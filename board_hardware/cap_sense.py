@@ -17,8 +17,6 @@ except:
 
 
 class CapacitiveSensors:
-    animation_thread = None
-
     # initialize class will number of sensors and the time interval for updating
     # capacitive sensor state, defaults to once per second
     def __init__(self, num_sensors=16, time_interval=1.0):
