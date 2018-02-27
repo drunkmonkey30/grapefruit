@@ -106,7 +106,7 @@ if __name__ == "__main__":
     for i in range(0, cap_sense.num_sensors):
         print("sensor #" + str(i) + ": " + str(cap_sense.is_sensor_active(i)))
 
-    print("testing update thread...")
+    print("\ntesting update thread...")
     cap_sense.start_update_thread()
     try:
         while True:
