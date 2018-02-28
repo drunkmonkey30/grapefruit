@@ -5,6 +5,9 @@
 
 import uuid
 
+PING_TO_CLIENT = "Ping?"
+PING_TO_SERVER = "Pong!"
+
 def create_client_uuid():
     return uuid.uuid4()
 
