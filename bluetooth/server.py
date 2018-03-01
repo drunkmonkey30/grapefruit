@@ -4,6 +4,7 @@
 import threading
 import uuid
 import time
+import queue
 from provision import *
 
 try:
@@ -18,11 +19,13 @@ class BlueServer:
         self.socket = None
         self.client_sock = None
         self.is_connected = None
-        self.connect_thread = None
-        self.io_thread = None
+        self.comm_thread = None
 
         self.done = threading.Event
         self.done.clear()
+
+        self.send_queue = None
+        self.recv_queue = None
 
         self.uuid, self.client_uuid = provision.read_uuid_file("friends.uuid")
         if self.uuid is None or self.client_uuid is None:
@@ -32,6 +35,9 @@ class BlueServer:
 
     # spawns a new thread that waits to connect to the client device
     # ie our dual screen child device
+    #
+    # returns a threading.Event that will be set when we have established a good
+    # connection with the intended child device and can begin sending data
     def connect_to_client(self):
         # create event object that our threads will use
         # we will also use it for internal state
@@ -39,11 +45,17 @@ class BlueServer:
         # set flag to false (not connected to correct client)
         self.is_connected.clear()
 
-        self.connect_thread = threading.Thread(target=self.do_connect, name="bluetooth-server-connect")
-        self.connect_thread.start()
+        self.send_queue = queue.Queue(10)
+        self.recv_queue = queue.Queue(10)
+
+        self.recv_thread = threading.Thread(target=self.recv_func, name="bluetooth-server-recv")
+        self.comm_thread = threading.Thread(target=self.start_comms, name="bluetooth-server-comms")
+        self.comm_thread.start()
+
+        return self.is_connected
 
 
-    def do_connect(self):
+    def start_comms(self):
         self.socket = bluetooth.BluetoothSocket(bluetooth.L2CAP)
         self.socket.bind(("", 0xBEEF))
         self.socket.listen(1)
@@ -72,29 +84,44 @@ class BlueServer:
                     print("BlueServer: bad uuid attempted connection: " + str(c_uuid))
                     self.client_sock.close()
 
-            # this should loop for as long as we have a connection
-            # it will ping the client every 15 seconds to make sure our connection is good
+            # the following loop is the communications part of the server
+            # it sends messages added to a queue via the interface of BlueServer
+            # it will also periodically ping the child to make sure our connection is good
+            #
+            # this should loop for:
+            #   as long as we have a connection OR
+            #   application requests that we die
             missed_pings = 0
             while self.is_connected.is_set() and not self.done.is_set():
-                time.sleep(15.0)
+                message = None
+                try:
+                    message = self.send_queue.get_nowait()
+                    self.socket.send(message)
+                except queue.Empty:
+                    # no message is available for sending, ping the child instead
+                    self.socket.send(provision.PING_TO_CLIENT)
+                    response = self.socket.recv(1024).strip()
 
-                self.socket.send(provision.PING_TO_CLIENT)
-                response = self.socket.recv(1024).strip()
-                if PING_TO_SERVER in response:
-                    missed_pings = 0
-                else:
-                    missed_pings += 1
+                    if provision.PING_TO_SERVER in response:
+                        missed_pings = 0
+                    else:
+                        missed_pings += 1
 
-                if missed_pings > 5:
-                    print("*** ERROR: BlueServer: client missed > 5 pings")
-                    # clear the connected flag and try to reconnect
-                    self.is_connected.clear()
+                    if missed_pings > 5:
+                        print("*** ERROR: BlueServer: client missed > 5 pings")
+                        # clear the connected flag and try to reconnect
+                        self.is_connected.clear()
 
         # TODO should probably do a clean up to get any data that should be commited to database before killing connection
 
         # all done with our bluetooth connection, shut everything down
         self.client_sock.close()
         self.socket.close()
+
+    # listens for incoming messages from the bluetooth socker
+    def recv_func(self):
+        while self.is_connected.wait() and not self.done.is_set():
+            pass
 
 
 if __name__ == "__main__":
