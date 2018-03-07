@@ -6,6 +6,7 @@ import uuid
 import time
 import queue
 from provision import *
+from message_maker import Message
 
 try:
     import bluetooth
@@ -95,8 +96,8 @@ class BlueServer:
 
 
             # set mtu of l2cap socket to larger than 672 bytes
-            bluetooth.set_l2cap_mtu(self.socket, 10000)
-            bluetooth.set_l2cap_mtu(self.client_sock, 10000)
+            bluetooth.set_l2cap_mtu(self.socket, Message.L2CAP_MTU)
+            bluetooth.set_l2cap_mtu(self.client_sock, Message.L2CAP_MTU)
 
 
             # the following loop is the communications part of the server
