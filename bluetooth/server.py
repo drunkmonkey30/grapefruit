@@ -29,13 +29,19 @@ class BlueServer:
         self.done.clear()
 
         self.send_queue = queue.Queue(10)
-        self.recv_queue = queue.Queue(10)
+        #self.recv_queue = queue.Queue(10)
+
+        self.message_codec = Message()
 
         self.uuid, self.client_uuid = provision.read_uuid_file("friends.uuid")
         if self.uuid is None or self.client_uuid is None:
             print("*** ERROR: unable to read bluetooth uuids from file")
             exit(1)
 
+    # send a message via the blueserver to client device
+    # this will take a raw message and packet-ize it
+    def send_message(self, message):
+        pass
 
     # stop the bluetooth server
     def stop_bluetooth(self):
@@ -130,8 +136,8 @@ class BlueServer:
     def recv_func(self):
         while not self.done.is_set():
             while self.is_connected.wait():
-                data = self.client_sock.recv(1024)
-                self.recv_queue.put(data)
+                data = self.client_sock.recv(Message.MAX_PACKET_SIZE)
+                self.message_codec.receive_packet(data)
 
 
 

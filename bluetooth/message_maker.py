@@ -18,9 +18,10 @@
 
 import struct
 import threading
+import queue
 
 class Message:
-    L2CAP_MTU = 1000
+    L2CAP_MTU = 672 # this should be the default value for the bluetooth protocol
     ENCODING = 'utf-8'
     # format string does not include the payload data
     # payload should be tacked on as bytes
@@ -30,8 +31,10 @@ class Message:
     packet_lock = threading.Lock()
 
     def __init__(self):
-        pass
+        self.receive_dict = {}
 
+
+    # returns a list of packets for sending on bluetooth channel
     # the data argument should be one of three types
     #   1. a string, or str of plain text data
     #   TODO 2. a list of strings
@@ -61,6 +64,26 @@ class Message:
         return packets
 
 
+    def print_header(self, header):
+        print("Packet Number . ." + str(header[0]))
+        print("Fragments . . . ." + str(header[1]))
+        print("Fragment Number ." + str(header[2]))
+        print("Payload Length  ." + str(header[3]))
+        print("Type . . . . .  ." + str(header[4]))
+
+
+    # returns a tuple with (header, data)
+    # data will be represented as a string
+    # header as a tuple with elements defined at the top of this file
+    def receive_packet(self, packet):
+        # read header from packet
+        header = self.header_maker.unpack(packet[0:self.header_maker.size])
+        # read data from packet
+        data = packet[self.header_maker.size:header[3]].decode()
+
+        # TODO left off here
+        self.receive_dict
+
     def decode_bluetooth_message(self, message_as_bytes):
         pass
 
@@ -68,8 +91,13 @@ class Message:
 if __name__ == "__main__":
     m = Message()
 
+    print("testing creation")
     packets = m.create_bluetooth_message("this is a test message")
     print(packets)
+
+    print("\ntesting decode...")
+    for p in packets:
+        m.receive_packet(p)
 
     print('\n')
 
@@ -78,9 +106,17 @@ if __name__ == "__main__":
     for p in packets:
         print(p)
 
+    print("\ndecode...")
+    for p in packets:
+        m.receive_packet(p)
+
     print("\n")
 
     s = "test " * 500
     packets = m.create_bluetooth_message(s)
     for p in packets:
         print(p)
+
+    print("\ndecode...")
+    for p in packets:
+        m.receive_packet(p)
