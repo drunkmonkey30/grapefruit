@@ -4,8 +4,9 @@
 import threading
 import uuid
 import queue
-from provision import *
-from message_maker import Message
+import bluetooth
+from bluetooth.provision import *
+from bluetooth.message_maker import Message
 
 try:
     import bluetooth
@@ -16,8 +17,8 @@ except:
 
 class BlueServer:
     def __init__(self):
-        self.socket = None
-        self.client_sock = None
+        self.server_socket = None
+        self.client_socket = None
         self.is_connected = None
         self.comm_thread = None
         self.recv_thread = None
@@ -31,8 +32,8 @@ class BlueServer:
         self.send_queue = queue.Queue(10)
         self.recv_queue = queue.Queue(10)
 
-        self.uuid, self.client_uuid = provision.read_uuid_file("friends.uuid")
-        if self.uuid is None or self.client_uuid is None:
+        self.server_uuid, self.client_uuid = provision.read_uuid_file("friends.uuid")
+        if self.server_uuid is None or self.client_uuid is None:
             print("*** ERROR: unable to read bluetooth uuids from file")
             exit(1)
 
@@ -69,40 +70,41 @@ class BlueServer:
 
 
     def start_comms(self):
-        self.socket = bluetooth.BluetoothSocket(bluetooth.L2CAP)
-        self.socket.bind(("", 0xBEEF))
-        self.socket.listen(1)
+        self.server_socket = bluetooth.BluetoothSocket(bluetooth.L2CAP)
+        self.server_socket.bind(("", 0xBEEF))
+        self.server_socket.listen(1)
 
         # this should loop until we should stop all bluetooth communications
         # for instance, if we need to shutdown the game
         while not self.done.is_set():
-            bluetooth.advertise_service(self.socket, "grapefruit-server", str(self.uuid))
+            bluetooth.advertise_service(self.server_socket, "grapefruit-server", str(self.server_uuid))
 
             # perform this until we get a valid connection with our intended client
             while not self.is_connected.is_set():
-                self.client_sock, address = self.socket.accept()
+                self.client_socket, address = self.server_socket.accept()
                 print("Bluetooth: connection from: " + str(address))
 
                 # we got a connection, now verify the client
                 # client should send their uuid first, and we check that it matches what was in
                 # our friends.uuid file from the provisioning script
-                c_uuid = self.client_sock.recv(1024)
+                c_uuid = self.client_socket.recv(1024)
                 print("DEBUG: BlueServer received:",c_uuid)
                 c_uuid = uuid.UUID(bytes=c_uuid[0:16])
                 print("DEBUG: BlueServer client UUID: " + str(c_uuid))
 
                 # check that our only allowed uuid matches
                 if c_uuid == self.client_uuid:
-                    bluetooth.stop_advertising(self.socket)
+                    self.server_socket.send("OK")
+                    bluetooth.stop_advertising(self.server_socket)
                     self.is_connected.set()
                 else:
                     print("BlueServer: bad uuid attempted connection: " + str(c_uuid))
-                    self.client_sock.close()
+                    self.client_socket.close()
 
 
             # set mtu of l2cap socket to larger than 672 bytes
-            bluetooth.set_l2cap_mtu(self.socket, Message.L2CAP_MTU)
-            bluetooth.set_l2cap_mtu(self.client_sock, Message.L2CAP_MTU)
+            bluetooth.set_l2cap_mtu(self.server_socket, Message.L2CAP_MTU)
+            bluetooth.set_l2cap_mtu(self.client_socket, Message.L2CAP_MTU)
 
 
             # the following loop is the communications part of the server
@@ -116,22 +118,22 @@ class BlueServer:
                 message = None
                 try:
                     message = self.send_queue.get(True, 10.0)
-                    self.socket.send(message)
+                    self.server_socket.send(message)
 
                 except queue.Empty:
                     # no message is available for sending, ping the child instead
                     ping = Message.create_bluetooth_message(provision.PING_TO_CLIENT)
-                    self.socket.send(ping)
+                    self.server_socket.send(ping)
                     self.pings_sent += 1
 
-                    print("BlueServer: sent ping: " + str(self.pings_sent))
+                    print("BlueServer: sent ping #: " + str(self.pings_sent))
 
 
         # TODO should probably do a clean up to get any data that should be commited to database before killing connection
 
         # all done with our bluetooth connection, shut everything down
-        self.client_sock.close()
-        self.socket.close()
+        self.client_socket.close()
+        self.server_socket.close()
 
     # listens for incoming messages from the bluetooth socket
     def recv_func(self):
@@ -141,18 +143,19 @@ class BlueServer:
             # UNLESS we lose connection, so that it will continue waiting
             while self.is_connected.wait():
                 # read data from client socket
-                data = self.client_sock.recv(Message.MAX_PACKET_SIZE)
+                data = self.client_socket.recv(Message.L2CAP_MTU)
                 # pass if off to message packet receiver
                 packet = Message.receive_packet(data)
 
-                # check for pong
-                if packet[1] == provision.PING_TO_SERVER:
-                    self.pongs_recv += 1
-                    print("BlueServer: got pong: " + str(self.pongs_recv))
-
-                # if we have a full packet (packet not None)
                 if packet is not None:
-                    self.recv_queue.put_nowait(packet)
+                    # check for pong
+                    if packet[1] == bluetooth.provision.PING_TO_SERVER:
+                        self.pongs_recv += 1
+                        print("BlueServer: got pong #: " + str(self.pongs_recv))
+                    else:
+                        # if we have a full packet (packet not None)
+                        if packet is not None:
+                            self.recv_queue.put_nowait(packet)
 
 
 
