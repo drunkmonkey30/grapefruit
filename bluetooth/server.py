@@ -3,7 +3,6 @@
 
 import threading
 import uuid
-import time
 import queue
 from provision import *
 from message_maker import Message
@@ -21,17 +20,16 @@ class BlueServer:
         self.client_sock = None
         self.is_connected = None
         self.comm_thread = None
+        self.recv_thread = None
 
-        self.consecutive_pings_sent = 0
-        self.consecutive_pings_recv = 0
+        self.pings_sent = 0
+        self.pongs_recv = 0
 
         self.done = threading.Event
         self.done.clear()
 
         self.send_queue = queue.Queue(10)
-        #self.recv_queue = queue.Queue(10)
-
-        self.message_codec = Message()
+        self.recv_queue = queue.Queue(10)
 
         self.uuid, self.client_uuid = provision.read_uuid_file("friends.uuid")
         if self.uuid is None or self.client_uuid is None:
@@ -46,6 +44,7 @@ class BlueServer:
     # stop the bluetooth server
     def stop_bluetooth(self):
         self.done.set()
+
 
     # spawns a new thread that waits to connect to the client device
     # ie our dual screen child device
@@ -118,12 +117,14 @@ class BlueServer:
                 try:
                     message = self.send_queue.get(True, 10.0)
                     self.socket.send(message)
-                    self.consecutive_pings_sent = 0
 
                 except queue.Empty:
                     # no message is available for sending, ping the child instead
-                    self.socket.send(provision.PING_TO_CLIENT)
-                    self.consecutive_pings_sent += 1
+                    ping = Message.create_bluetooth_message(provision.PING_TO_CLIENT)
+                    self.socket.send(ping)
+                    self.pings_sent += 1
+
+                    print("BlueServer: sent ping: " + str(self.pings_sent))
 
 
         # TODO should probably do a clean up to get any data that should be commited to database before killing connection
@@ -134,10 +135,24 @@ class BlueServer:
 
     # listens for incoming messages from the bluetooth socket
     def recv_func(self):
+        # loop until done is set
         while not self.done.is_set():
+            # wait() will wait until the event is set, then will always return True immediately
+            # UNLESS we lose connection, so that it will continue waiting
             while self.is_connected.wait():
+                # read data from client socket
                 data = self.client_sock.recv(Message.MAX_PACKET_SIZE)
-                self.message_codec.receive_packet(data)
+                # pass if off to message packet receiver
+                packet = Message.receive_packet(data)
+
+                # check for pong
+                if packet[1] == provision.PING_TO_SERVER:
+                    self.pongs_recv += 1
+                    print("BlueServer: got pong: " + str(self.pongs_recv))
+
+                # if we have a full packet (packet not None)
+                if packet is not None:
+                    self.recv_queue.put_nowait(packet)
 
 
 
