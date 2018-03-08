@@ -3,7 +3,7 @@
 
 #   packet number   - 2 bytes (unsigned short)  - used to match responses and requests
 #
-#   fragmented?     - 1 bytes (unsigned byte)   - used to indicate if the packet has been split into multiple messages,
+#   total fragments - 1 bytes (unsigned byte)   - used to indicate if the packet has been split into multiple messages,
 #                                               - if the packet has been fragmented, this is the total number of fragments
 #                                               - we will be expecting
 #
@@ -18,20 +18,30 @@
 
 import struct
 import threading
-import queue
+
 
 class Message:
+    # defines for packet header fields
+    PACKET_NUMBER   = 0
+    TOTAL_FRAGMENTS = 1
+    FRAGMENT_NUMBER = 2
+    PAYLOAD_LENGTH  = 3
+    TYPE            = 4
+
     L2CAP_MTU = 672 # this should be the default value for the bluetooth protocol
     ENCODING = 'utf-8'
+
     # format string does not include the payload data
     # payload should be tacked on as bytes
     header_maker = struct.Struct("!HBBHB")
+    # maximum size for each bluetooth payload
     MAX_PACKET_SIZE = L2CAP_MTU - header_maker.size
     packet_number = 0
     packet_lock = threading.Lock()
+    receive_dict = {}
 
     def __init__(self):
-        self.receive_dict = {}
+        pass
 
 
     # returns a list of packets for sending on bluetooth channel
@@ -40,7 +50,10 @@ class Message:
     #   TODO 2. a list of strings
     #   TODO 3. a dictionary of key value pairs, all of which are strings
     def create_bluetooth_message(self, data_string):
-        payload_length = len(data_string)
+
+        encoded_payload = bytes(data_string, Message.ENCODING)
+        payload_length = len(encoded_payload)
+
         # determine if packet will be fragmented and set number of fragments
         fragmented = payload_length // Message.MAX_PACKET_SIZE
 
@@ -51,14 +64,15 @@ class Message:
         for p in range(fragmented):
             # make header for the packet
             header = Message.header_maker.pack(Message.packet_number, fragmented, p, Message.MAX_PACKET_SIZE, 0x01)
-            packet = header + bytes(data_string[p*Message.MAX_PACKET_SIZE:(p+1)*Message.MAX_PACKET_SIZE], Message.ENCODING)
+            packet = header + encoded_payload[p*Message.MAX_PACKET_SIZE:(p+1)*Message.MAX_PACKET_SIZE] #bytes(data_string[p*Message.MAX_PACKET_SIZE:(p+1)*Message.MAX_PACKET_SIZE], Message.ENCODING)
             packets.append(packet)
             payload_length = payload_length - Message.MAX_PACKET_SIZE
 
         # do last packet
         header = Message.header_maker.pack(Message.packet_number, fragmented, fragmented, payload_length, 0x01)
         Message.packet_lock.release()
-        packet = header + bytes(data_string[fragmented*Message.MAX_PACKET_SIZE:], Message.ENCODING)
+        # bytes(data_string[fragmented*Message.MAX_PACKET_SIZE:], Message.ENCODING)
+        packet = header + encoded_payload[fragmented*Message.MAX_PACKET_SIZE:]
         packets.append(packet)
 
         return packets
@@ -72,20 +86,55 @@ class Message:
         print("Type . . . . .  ." + str(header[4]))
 
 
-    # returns a tuple with (header, data)
+    # returns a tuple with (header, data) or None if no packet is complete
     # data will be represented as a string
     # header as a tuple with elements defined at the top of this file
     def receive_packet(self, packet):
         # read header from packet
-        header = self.header_maker.unpack(packet[0:self.header_maker.size])
+        header = Message.header_maker.unpack(packet[0:Message.header_maker.size])
         # read data from packet
-        data = packet[self.header_maker.size:header[3]].decode()
+        data = packet[Message.header_maker.size:header[Message.PAYLOAD_LENGTH]+Message.header_maker.size].decode()
 
-        # TODO left off here
-        self.receive_dict
+        # print debug data
+        #self.print_header(header)
+        #print(data)
 
-    def decode_bluetooth_message(self, message_as_bytes):
-        pass
+        # now that we have the header and payload data,
+        # we create an entry in the receive dictionary that consists of:
+        #   key = packet number
+        #   value = list[ tuple( header, data ) ]
+
+        pn = header[Message.PACKET_NUMBER]
+
+        # first check if the packet number key exists in the dictionary
+        # if it does not exist, then create an entry as an empty list
+        if pn not in Message.receive_dict:
+            Message.receive_dict[pn] = []
+
+        # append (header, data) of packet to its appropriate dictionary entry
+        Message.receive_dict[pn].append((header, data))
+
+        # check that we have all fragments of a message
+        if len(Message.receive_dict[pn]) - 1 == header[Message.TOTAL_FRAGMENTS]:
+            # if we do, then assemble the full message and return it
+
+            # use sorted function to sort list by fragment number AFTER reception of all packets
+            fragment_list = Message.receive_dict.pop(pn)
+            fragment_list = sorted(fragment_list, key=lambda p: p[0][Message.FRAGMENT_NUMBER])
+
+            payload = ""
+            for d in fragment_list:
+                payload += d[1]
+
+            # debug
+            #print("Received Packet Number: " + str(pn))
+            #print("Full payload:\n" + payload)
+
+            # return completed packet
+            return (header, payload)
+
+        # no packet is complete, return none
+        return None
 
 
 if __name__ == "__main__":
@@ -101,8 +150,12 @@ if __name__ == "__main__":
 
     print('\n')
 
-    s = "t" * 994
+    s = "X 1 2 3 4 5 6 7 *" * 400
     packets = m.create_bluetooth_message(s)
+
+    print("shuffling packet list")
+    from random import shuffle
+    shuffle(packets)
     for p in packets:
         print(p)
 
@@ -111,12 +164,3 @@ if __name__ == "__main__":
         m.receive_packet(p)
 
     print("\n")
-
-    s = "test " * 500
-    packets = m.create_bluetooth_message(s)
-    for p in packets:
-        print(p)
-
-    print("\ndecode...")
-    for p in packets:
-        m.receive_packet(p)
