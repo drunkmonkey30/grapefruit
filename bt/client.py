@@ -10,8 +10,8 @@ from bluetooth.message_maker import Message
 class BlueClient:
     def __init__(self):
         self.client_socket = None
-        self.is_connected = threading.Event
-        self.done = threading.Event
+        self.is_connected = threading.Event()
+        self.done = threading.Event()
         self.send_queue = queue.Queue(10)
         self.recv_queue = queue.Queue(10)
 

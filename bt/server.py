@@ -5,8 +5,8 @@ import threading
 import uuid
 import queue
 import bluetooth
-from bluetooth.provision import *
-from bluetooth.message_maker import Message
+import provision
+import message_maker
 
 try:
     import bluetooth
@@ -26,7 +26,7 @@ class BlueServer:
         self.pings_sent = 0
         self.pongs_recv = 0
 
-        self.done = threading.Event
+        self.done = threading.Event()
         self.done.clear()
 
         self.send_queue = queue.Queue(10)
@@ -55,7 +55,7 @@ class BlueServer:
     def start_bluetooth(self):
         # create event object that our threads will use
         # we will also use it for internal state
-        self.is_connected = threading.Event
+        self.is_connected = threading.Event()
         # set flag to false (not connected to correct client)
         self.is_connected.clear()
 
@@ -160,4 +160,5 @@ class BlueServer:
 
 
 if __name__ == "__main__":
-    print("a test has not yet been written for the BlueServer")
+    server = BlueServer()
+    server.start_bluetooth()
