@@ -20,10 +20,15 @@ class LedManager:
 	def close(self):
 		python_i2c.i2c_close(self.i2c_handle)
 
+
 	# uses my python lib to send led values to the microcontroller driving the leds
 	def update_leds(self):
+		# insert the byte value that says we are updating all leds (see design.docx in python_i2c folder)
 		self.led_values.insert(0, 0x01)
+
+        # send data buffer over i2c to microcontroller
 		python_i2c.i2c_send(self.i2c_handle, 0x1a, self.led_values)
+
 		#print(self.led_values)
 		self.led_values.pop(0)
 

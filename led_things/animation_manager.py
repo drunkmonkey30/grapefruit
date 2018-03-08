@@ -55,6 +55,7 @@ class LedAnimationManager:
         # lock for manipulating the animation dictionary
         self.led_anim_lock = threading.Lock()
 
+
     # add an animation chain to an led
     def add_animation(self, led_num, animation_chain):
         if led_num >= self.led_man.numLeds:
@@ -70,13 +71,16 @@ class LedAnimationManager:
 
         return
 
+
     # removes all animations associated with an led
     def remove_animation(self, which_led):
         # good coding practices say I should lock this but python is single threaded
         self.led_animations.pop(which_led)
 
+
     def remove_all_animations(self):
         self.led_animations = {}
+
 
     def start_animation_thread(self):
         self.animation_thread.start()
@@ -85,6 +89,7 @@ class LedAnimationManager:
         self.animation_thread_cancel_lock.acquire(True)
         self.animation_thread_stop = True
         self.animation_thread_cancel_lock.release()
+
 
     # sets target frame rate for updating leds
     def set_frame_rate(self, frame_rate):
