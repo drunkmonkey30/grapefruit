@@ -60,9 +60,14 @@ int main(void)
 {
 	/* Initializes MCU, drivers and middleware */
 	atmel_start_init();
+	
+	twi1_slave_init(0x2b);
 
 	// enable interrupts
 	sei();
+	
+	key_states[0] = 0;
+	key_states[1] = 0;
 
 	/* Replace with your application code */
 	while (1) {
