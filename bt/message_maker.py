@@ -141,17 +141,19 @@ if __name__ == "__main__":
     m = Message()
 
     print("testing creation")
-    packets = m.create_bluetooth_message("this is a test message")
+    packets = Message.create_bluetooth_message(Message, "this is a test message")
     print(packets)
 
     print("\ntesting decode...")
     for p in packets:
-        m.receive_packet(p)
+        x = Message.receive_packet(Message, p)
+        if x is not None:
+            print(x)
 
     print('\n')
 
     s = "X 1 2 3 4 5 6 7 *" * 400
-    packets = m.create_bluetooth_message(s)
+    packets = Message.create_bluetooth_message(Message, s)
 
     print("shuffling packet list")
     from random import shuffle
@@ -161,6 +163,8 @@ if __name__ == "__main__":
 
     print("\ndecode...")
     for p in packets:
-        m.receive_packet(p)
+        x = Message.receive_packet(Message, p)
+        if x is not None:
+            print(x)
 
     print("\n")

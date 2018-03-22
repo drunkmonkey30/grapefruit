@@ -37,13 +37,17 @@ class BlueServer:
             print("*** ERROR: unable to read bluetooth uuids from file")
             exit(1)
 
+
     # send a message via the blueserver to client device
     # this will take a raw message and packet-ize it
     def send_message(self, message):
-        pass
+        packets = Message.create_bluetooth_message(Message, message)
+        for p in packets:
+            self.send_queue.put_nowait(p)
+
 
     # stop the bluetooth server
-    def stop_bluetooth(self):
+    def stop_server(self):
         self.done.set()
 
 
@@ -52,7 +56,7 @@ class BlueServer:
     #
     # returns a threading.Event that will be set when we have established a good
     # connection with the intended child device and can begin sending data
-    def start_bluetooth(self):
+    def start_server(self):
         # create event object that our threads will use
         # we will also use it for internal state
         self.is_connected = threading.Event()
@@ -122,7 +126,7 @@ class BlueServer:
 
                 except queue.Empty:
                     # no message is available for sending, ping the child instead
-                    ping = Message.create_bluetooth_message(provision.PING_TO_CLIENT)
+                    ping = Message.create_bluetooth_message(Message, provision.PING_TO_CLIENT)
                     self.server_socket.send(ping)
                     self.pings_sent += 1
 
@@ -145,7 +149,7 @@ class BlueServer:
                 # read data from client socket
                 data = self.client_socket.recv(Message.L2CAP_MTU)
                 # pass if off to message packet receiver
-                packet = Message.receive_packet(data)
+                packet = Message.receive_packet(Message, data)
 
                 if packet is not None:
                     # check for pong

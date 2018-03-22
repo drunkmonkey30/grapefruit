@@ -24,6 +24,12 @@ class BlueClient:
         self.pong_sent = 0
 
 
+    def send_message(self, message):
+        packets = Message.create_bluetooth_message(Message, message)
+        for p in packets:
+            self.send_queue.put_nowait(p)
+
+
     def stop_client(self):
         self.done.set()
 
@@ -83,12 +89,12 @@ class BlueClient:
         while not self.done.is_set():
             while self.is_connected.wait():
                 data = self.client_socket.recv(Message.L2CAP_MTU)
-                packet = Message.receive_packet(data)
+                packet = Message.receive_packet(Message, data)
 
                 if packet is not None:
                     # check for pong
-                    if packet[1] == bluetooth.provision.PING_TO_CLIENT:
-                        pong = Message.create_bluetooth_message(bluetooth.provision.PING_TO_SERVER)
+                    if bluetooth.provision.PING_TO_CLIENT in packet[1]:
+                        pong = Message.create_bluetooth_message(Message, bluetooth.provision.PING_TO_SERVER)
                         self.send_queue.put(pong)
                         self.pong_sent += 1
                     else:
