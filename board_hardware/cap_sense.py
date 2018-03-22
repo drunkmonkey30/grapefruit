@@ -63,7 +63,9 @@ class CapacitiveSensors:
     def update_sensor_state(cap_sense):
         # get initial state of sensors
         if ON_PI:
-            cap_sense.sensor_state = python_i2c.i2c_read(cap_sense.i2c_handle, 0x1a, cap_sense.sensor_byte_count)
+            cap_sense.sensor_state = python_i2c.i2c_read(cap_sense.i2c_handle, 0x2b, cap_sense.sensor_byte_count)
+            for i in range(0, cap_sense.num_sensors):
+                print("sensor #" + str(i) + ": " + str(cap_sense.is_sensor_active(i)))
         else:
             print("CapacitiveSensors: read initial state")
 
@@ -76,7 +78,10 @@ class CapacitiveSensors:
             # delta has passed, read values from microcontroller
             try:
                 if ON_PI:
-                    cap_sense.sensor_state = python_i2c.i2c_read(cap_sense.i2c_handle, 0x1a, cap_sense.sensor_byte_count)
+                    cap_sense.sensor_state = python_i2c.i2c_read(cap_sense.i2c_handle, 0x2b, cap_sense.sensor_byte_count)
+                    #for i in range(0, cap_sense.num_sensors):
+                    #    print("sensor #" + str(i) + ": " + str(cap_sense.is_sensor_active(i)))
+                    print(cap_sense.sensor_state)
                 else:
                     print("CapacitiveSensors: update sensor states")
             except:
@@ -91,12 +96,12 @@ class CapacitiveSensors:
     # checks if a sensor is active (something is touching it)
     # returns true or false
     def is_sensor_active(self, sensor_number):
-        return self.sensor_state[self.sensor_byte_count - 1 - (sensor_number // 8)] & (1 << (sensor_number % 8)) != 0
+        return self.sensor_state[sensor_number // 8] & (1 << (sensor_number % 8)) != 0
 
 
 if __name__ == "__main__":
     print("creating cap sense object")
-    cap_sense = CapacitiveSensors(17, 1.0)
+    cap_sense = CapacitiveSensors(16, 1.0)
 
     print(cap_sense.sensor_byte_count, cap_sense.i2c_handle, cap_sense.time_interval)
 
@@ -106,11 +111,14 @@ if __name__ == "__main__":
     for i in range(0, cap_sense.num_sensors):
         print("sensor #" + str(i) + ": " + str(cap_sense.is_sensor_active(i)))
 
+
+    cap_sense = CapacitiveSensors(16, 1.0)
     print("\ntesting update thread...")
     cap_sense.start_update_thread()
     try:
         while True:
             pass
     except:
+        print("stopping update thread")
         cap_sense.stop_update_thread()
         cap_sense.close()
