@@ -14,7 +14,7 @@ except:
     print("*** ERROR:bluetooth: failed to import bluetooth library, exiting")
     exit(1)
 
-
+# TODO lots of common code between client and server, make common code a base class and extend client and server
 class BlueServer:
     def __init__(self):
         self.server_socket = None

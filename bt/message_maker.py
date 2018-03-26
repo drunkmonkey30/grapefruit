@@ -103,7 +103,6 @@ class Message:
         # we create an entry in the receive dictionary that consists of:
         #   key = packet number
         #   value = list[ tuple( header, data ) ]
-
         pn = header[Message.PACKET_NUMBER]
 
         # first check if the packet number key exists in the dictionary
@@ -124,6 +123,7 @@ class Message:
 
             payload = ""
             for d in fragment_list:
+                # assemble the full payload from the fragments
                 payload += d[1]
 
             # debug
