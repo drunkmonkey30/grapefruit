@@ -1,4 +1,6 @@
-from bt.server import BlueServer
+import sys
+sys.path.append('../bt/')
+from server import *
 
 
 # main file for gameboard

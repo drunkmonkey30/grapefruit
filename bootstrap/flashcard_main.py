@@ -1,9 +1,18 @@
+import sys
+sys.path.append('../bt/')
+from client import *
+
+
 # main executable for flashcard device
 # starts bluetooth, connects to gameboard, does whatever...
 
 
 def flashcard_main():
-    pass
+    blue_client = BlueClient()
+
+    blue_client.start_client()
+
+
 
 
 
