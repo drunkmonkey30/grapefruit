@@ -5,8 +5,8 @@ import threading
 import uuid
 import queue
 import bluetooth
-import provision
-import message_maker
+import bt.provision
+import bt.message_maker
 
 try:
     import bluetooth
@@ -67,13 +67,13 @@ class BlueServer:
         self.recv_thread = threading.Thread(target=self.recv_func, name="bluetooth-server-recv")
         self.recv_thread.start()
         # start connector and sender thread
-        self.comm_thread = threading.Thread(target=self.start_comms, name="bluetooth-server-comms")
+        self.comm_thread = threading.Thread(target=self.start_send_thread, name="bluetooth-server-send")
         self.comm_thread.start()
 
         return self.is_connected
 
 
-    def start_comms(self):
+    def start_send_thread(self):
         self.server_socket = bluetooth.BluetoothSocket(bluetooth.L2CAP)
         self.server_socket.bind(("", 0xBEEF))
         self.server_socket.listen(1)
@@ -91,7 +91,9 @@ class BlueServer:
                 # we got a connection, now verify the client
                 # client should send their uuid first, and we check that it matches what was in
                 # our friends.uuid file from the provisioning script
-                c_uuid = self.client_socket.recv(1024)
+
+                # uuid is 16 bytes, so only receive that many
+                c_uuid = self.client_socket.recv(16)
                 print("DEBUG: BlueServer received:",c_uuid)
                 c_uuid = uuid.UUID(bytes=c_uuid[0:16])
                 print("DEBUG: BlueServer client UUID: " + str(c_uuid))
@@ -107,6 +109,7 @@ class BlueServer:
 
 
             # set mtu of l2cap socket to larger than 672 bytes
+            # update 3/26/18 Message.L2CAP_MTU is set to 672, so no change from default value
             bluetooth.set_l2cap_mtu(self.server_socket, Message.L2CAP_MTU)
             bluetooth.set_l2cap_mtu(self.client_socket, Message.L2CAP_MTU)
 
@@ -130,7 +133,7 @@ class BlueServer:
                     self.server_socket.send(ping)
                     self.pings_sent += 1
 
-                    print("BlueServer: sent ping #: " + str(self.pings_sent))
+                    print("***BlueServer: sent ping #: " + str(self.pings_sent))
 
 
         # TODO should probably do a clean up to get any data that should be commited to database before killing connection

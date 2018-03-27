@@ -21,7 +21,7 @@ except:
 
 
 class CapacitiveSensors:
-    # initialize class will number of sensors and the time interval for updating
+    # initialize class with number of sensors and the time interval for updating
     # capacitive sensor state, defaults to once per second
     def __init__(self, num_sensors=16, time_interval=1.0):
         self.num_sensors = num_sensors

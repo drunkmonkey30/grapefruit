@@ -1,5 +1,4 @@
-import sys
-sys.path.append()
+from bt.server import BlueServer
 
 
 # main file for gameboard
@@ -7,7 +6,13 @@ sys.path.append()
 
 
 def gameboard_main():
-    pass
+    print("gameboard_main entry")
+
+    print("\nstarting bluetooth server")
+    bluetooth_server = BlueServer()
+    connected = bluetooth_server.start_server()
+
+
 
 
 if __name__ == "__main__":

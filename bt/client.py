@@ -43,15 +43,15 @@ class BlueClient:
             print("*** ERROR: unable to read bluetooth uuids from file")
             exit(1)
 
-        self.recv_thread = threading.Thread(target=self.recv_func, name="bluetooth-client-recv")
+        self.recv_thread = threading.Thread(target=self.recv_thread, name="bluetooth-client-recv")
         self.recv_thread.start()
-        self.comm_thread = threading.Thread(target=self.comm_func, name="bluetooth-client-comms")
+        self.comm_thread = threading.Thread(target=self.send_thread, name="bluetooth-client-send")
         self.comm_thread.start()
 
         return self.is_connected
 
 
-    def comm_func(self):
+    def send_thread(self):
         # loop until we are told to stop
         while not self.done.is_set():
             # connect to master device (game board)
@@ -71,7 +71,7 @@ class BlueClient:
                 # send our uuid to the server
                 self.client_socket.send(self.client_uuid.bytes)
                 # check for ok message
-                ok = self.client_socket.recv(10)
+                ok = self.client_socket.recv(2)
                 if "OK" in ok:
                     self.is_connected.set()
 
@@ -85,7 +85,7 @@ class BlueClient:
 
 
 
-    def recv_func(self):
+    def recv_thread(self):
         while not self.done.is_set():
             while self.is_connected.wait():
                 data = self.client_socket.recv(Message.L2CAP_MTU)
@@ -97,6 +97,7 @@ class BlueClient:
                         pong = Message.create_bluetooth_message(Message, bluetooth.provision.PING_TO_SERVER)
                         self.send_queue.put(pong)
                         self.pong_sent += 1
+                        print("***BlueClient sent PONG #" + str(self.pong_sent))
                     else:
                         # if we have a full packet (packet not None)
                         if packet is not None:
