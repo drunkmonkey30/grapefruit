@@ -4,6 +4,7 @@ sys.path.append('../led_things/')
 from led_manager import *
 from animation_manager import *
 from animation import *
+from cap_sense import *
 
 # main interface for hardware on the gameboard
 # eg. leds, capacitive sensors, solenoids...
@@ -15,20 +16,22 @@ LED_EAST    = 2
 LED_WEST    = 0
 
 class GameBoard:
-    led_manager = None
-    animation_manager = None
-    num_tiles = 0
-
     #initialize the game board
     #pass in N for NxN game board, so 4 for 4x4 grid
     def __init__(self, tiles_N):
         self.num_tiles = tiles_N * tiles_N
         self.led_manager = LedManager(self.num_tiles * 4)
         self.animation_manager = LedAnimationManager(self.led_manager, 30.0)
+        self.cap_sense = CapacitiveSensors(self.num_tiles, 0.7)
+        self.cap_sense.start_update_thread()
 
     def close(self):
-        if not self.led_manager == None:
+        if self.led_manager is not None:
             self.led_manager.close()
+
+        if self.cap_sense is not None:
+            self.cap_sense.stop_update_thread()
+            self.cap_sense.close()
 
     def start_animations(self):
         self.animation_manager.start_animation_thread()

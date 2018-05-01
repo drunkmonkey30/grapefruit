@@ -164,44 +164,46 @@ def rando():
     return s
 
 
-#Loops through to print the grid, just for testing readability
+#Loops through to print(the grid, just for testing readability
 def printGrid(brd):
     for x in range(len(brd)):
         if x % 4 != 0:
             if x < 10:
-                print brd[x].place, '  ',
+                print(brd[x].place, '  ', end=" ")
             else:
-                print brd[x].place, ' ',
+                print(brd[x].place, ' ', end=" ")
         else:
             if x < 10:
-                print '\n', brd[x].place, '  ',
+                print('\n', brd[x].place, '  ')
             else:
-                print '\n', brd[x].place, ' ',
+                print('\n', brd[x].place, ' ')
 
-    print ' '
+    print()
 
 
 #starts at selected starting tile and follows
 #the Next trail until a None space
 def printPath(s):
-    print s.place,
+    print(s.place)
     s = s.next
     while s is not None:
-        print '->',
+        print('->')
         if s.ghoul is True:
-            print '!',
-        print s.place,
+            print('!')
+        print(s.place)
         s = s.next
 
 
 #choose path length
-pathLen = SHORT_PATH
+#pathLen = SHORT_PATH
 
 #for loop for testing
-for i in range(0, 50):
-    #clean everything up and print grid
+def generate_path(pathLen):
+    #for i in range(0, 50):
+    #    print("*** Iteration #" + str(i))
+    #clean everything up and print(grid
     start(BOARD)
-    printGrid(BOARD)
+    #printGrid(BOARD)
     #get a new starting place
     startPlace = rando()
     #temp is the tile finder, it communicates with the board tiles
@@ -223,5 +225,16 @@ for i in range(0, 50):
                 temp = temp.next
                 #update the board to match temp
                 BOARD[temp.place] = temp
-    #print out the path
-    printPath(BOARD[startPlace])
+    #print(out the path
+    #printPath(BOARD[startPlace])
+    return BOARD
+
+
+if __name__ == "__main__":
+    path = generate_path(LONG_PATH)
+    print("length of path: " + str(len(path)))
+    for x in path:
+        print(x)
+
+    path = generate_path(SHORT_PATH)
+    print("length of path: " + str(len(path)))

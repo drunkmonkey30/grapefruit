@@ -81,9 +81,10 @@ class CapacitiveSensors:
                     cap_sense.sensor_state = python_i2c.i2c_read(cap_sense.i2c_handle, 0x2b, cap_sense.sensor_byte_count)
                     #for i in range(0, cap_sense.num_sensors):
                     #    print("sensor #" + str(i) + ": " + str(cap_sense.is_sensor_active(i)))
-                    print(cap_sense.sensor_state)
+                    #print(cap_sense.sensor_state)
                 else:
                     print("CapacitiveSensors: update sensor states")
+                    pass
             except:
                 print("*** ERROR: CapacitiveSensors: failed to read from i2c bus")
 

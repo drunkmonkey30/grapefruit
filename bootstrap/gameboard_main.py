@@ -1,6 +1,8 @@
 import sys
 sys.path.append('../bt/')
+sys.path.append('../board_hardware/')
 from server import *
+from game_board import *
 
 
 # main file for gameboard
@@ -14,7 +16,14 @@ def gameboard_main():
     bluetooth_server = BlueServer()
     connected = bluetooth_server.start_server()
 
+    game_board = GameBoard(4)
 
+    playing = True
+    while playing:
+        pass
+
+    bluetooth_server.stop_server()
+    game_board.close()
 
 
 if __name__ == "__main__":
