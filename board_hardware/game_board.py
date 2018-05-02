@@ -24,6 +24,7 @@ class GameBoard:
         self.animation_manager = LedAnimationManager(self.led_manager, 30.0)
         self.cap_sense = CapacitiveSensors(self.num_tiles, 0.7)
         self.cap_sense.start_update_thread()
+        self.start_animations()
 
     def close(self):
         if self.led_manager is not None:

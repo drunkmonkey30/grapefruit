@@ -21,7 +21,7 @@ class AnimationChain:
 	"""
 	def __init__(self, animations=None, repititions=0):
 		self.animation_chain = []
-		if not animations == None:
+		if animations is not None:
 			for a in animations:
 				self.animation_chain.append(a)
 
@@ -61,7 +61,7 @@ class AnimationChain:
 			# reset the current animation
 			self.animation_chain[self.current_anim].reset()
 
- 			# we are at the beginning of the next animation, so return the initial value
+			# we are at the beginning of the next animation, so return the initial value
 			return self.animation_chain[self.current_anim].initial
 
 		# animation is not done, do next frame
