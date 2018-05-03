@@ -223,7 +223,8 @@ def generate_path(pathLen, ghoul_density):
                 #    temp.next.ghoul = True
 
                 #g = random.normalvariate(0.5, 0.5)
-                g = random.gauss(0.5, 0.5)
+                #g = random.gauss(0.5, 0.5)
+                g = random.uniform(0.0, 1.0)
                 #print("G = " + str(g))
                 if g <= ghoul_density:
                     temp.next.ghoul = True
