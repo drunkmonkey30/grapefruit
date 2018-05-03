@@ -42,6 +42,7 @@ def gameboard_main():
     playing = True
     try:
         while playing:
+            # reset game board
             game_board.turn_off_all_leds()
 
             # generate the path and print it out
@@ -125,9 +126,7 @@ def gameboard_main():
     except:
         print("Exception caught")
 
-    if connected.is_set():
-        bluetooth_server.stop_server()
-
+    bluetooth_server.stop_server()
     game_board.close()
 
 
