@@ -198,7 +198,7 @@ def printPath(s):
 #pathLen = SHORT_PATH
 
 #for loop for testing
-def generate_path(pathLen):
+def generate_path(pathLen, ghoul_density):
     #for i in range(0, 50):
     #    print("*** Iteration #" + str(i))
     #clean everything up and print(grid
@@ -218,23 +218,42 @@ def generate_path(pathLen):
             #if temp is None the path is dead
             if temp is not None:
                 #Ghoul tiles are placed as the next tiles are selected
-                r = random.randint(0, 99)
-                if r % GHOUL_DENSITY == 0:
+                #r = random.randint(0, 99)
+                #if r % ghoul_density == 0:
+                #    temp.next.ghoul = True
+
+                #g = random.normalvariate(0.5, 0.5)
+                g = random.gauss(0.5, 0.5)
+                #print("G = " + str(g))
+                if g <= ghoul_density:
                     temp.next.ghoul = True
+
                 #update temp to the next tile in the path
                 temp = temp.next
                 #update the board to match temp
                 BOARD[temp.place] = temp
     #print(out the path
     #printPath(BOARD[startPlace])
-    return BOARD
+
+    path = []
+    path.append(BOARD[startPlace])
+    t = BOARD[startPlace].next
+    while t is not None:
+        path.append(t)
+        t = t.next
+
+    #return BOARD
+    return path
 
 
 if __name__ == "__main__":
-    path = generate_path(LONG_PATH)
+    path = generate_path(10, 0.2)
     print("length of path: " + str(len(path)))
     for x in path:
-        print(x)
+        print(str(x.place), end="")
+        if x.ghoul:
+            print("!", end="")
 
-    path = generate_path(SHORT_PATH)
-    print("length of path: " + str(len(path)))
+        print(" -> ", end="")
+
+    print("\n")

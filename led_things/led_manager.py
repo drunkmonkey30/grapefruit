@@ -53,7 +53,7 @@ class LedManager:
 		if b > 255: b = 255
 
 		#print(led, r, g, b)
-		self.led_values[3 * led] 	= g
+		self.led_values[3 * led] 	 = g
 		self.led_values[3 * led + 1] = r
 		self.led_values[3 * led + 2] = b
 

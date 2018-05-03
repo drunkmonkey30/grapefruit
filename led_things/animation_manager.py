@@ -56,11 +56,20 @@ class LedAnimationManager:
         self.led_anim_lock = threading.Lock()
 
 
+    # returns true if the specified led has an animation set on it
+    def check_led_has_anim(self, led_num):
+        if led_num in self.led_animations:
+            return True
+        return False
+
+
     # add an animation chain to an led
     def add_animation(self, led_num, animation_chain):
         if led_num >= self.led_man.numLeds:
             print("*** ERROR: animation_manager.add_animation: led specified is larger than total leds\n")
             return
+
+        self.led_anim_lock.acquire(True)
 
         if isinstance(animation_chain, AnimationChain):
             self.led_animations[led_num] = animation_chain
@@ -69,17 +78,26 @@ class LedAnimationManager:
             chain = AnimationChain([animation_chain])
             self.led_animations[led_num] = chain
 
+        self.led_anim_lock.release()
         return
 
 
     # removes all animations associated with an led
     def remove_animation(self, which_led):
         # good coding practices say I should lock this but python is single threaded
-        self.led_animations.pop(which_led)
+        # scratch that, lock it down
+        self.led_anim_lock.acquire(True)
+        try:
+            self.led_animations.pop(which_led)
+        except:
+            pass
+        self.led_anim_lock.release()
 
 
     def remove_all_animations(self):
+        self.led_anim_lock.acquire(True)
         self.led_animations = {}
+        self.led_anim_lock.release()
 
 
     def start_animation_thread(self):
@@ -109,7 +127,7 @@ class LedAnimationManager:
                 # print("animate")
 
                 # acquire the animation lock, wait until we get it
-                # ledAnim.led_anim_lock.acquire(True)
+                ledAnim.led_anim_lock.acquire(True)
 
                 finished_animations = []
                 # process all animations in the dictionary
@@ -129,7 +147,7 @@ class LedAnimationManager:
                     del ledAnim.led_animations[led_num]
 
                 # release lock on the animation dictionary
-                # ledAnim.led_anim_lock.release()
+                ledAnim.led_anim_lock.release()
 
                 #for i in range(0, ledAnim.led_man.numLeds):
                 #    ledAnim.led_man.printLedValue(i)

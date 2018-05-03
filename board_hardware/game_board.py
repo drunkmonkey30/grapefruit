@@ -22,7 +22,7 @@ class GameBoard:
         self.num_tiles = tiles_N * tiles_N
         self.led_manager = LedManager(self.num_tiles * 4)
         self.animation_manager = LedAnimationManager(self.led_manager, 30.0)
-        self.cap_sense = CapacitiveSensors(self.num_tiles, 0.7)
+        self.cap_sense = CapacitiveSensors(self.num_tiles, 0.6)
         self.cap_sense.start_update_thread()
         self.start_animations()
 
@@ -41,20 +41,37 @@ class GameBoard:
         self.animation_manager.end_animation_thread()
 
 
+    # sets all leds to RGB(0,0,0)
+    # (turns them off)
+    def turn_off_all_leds(self):
+        for tile in range(self.num_tiles):
+            for led in range(4):
+                self.clear_tile_led_animation(tile, led)
+                self.set_tile_led_solid_color(tile, led, 0, 0, 0)
+
+
     #set a specifice led on a specific tile to a solid, unchanging color
     #this will cancel any animations that have been set on that led
     def set_tile_led_solid_color(self, tile_num, which_led, r, g, b):
         led = self.convert_tile_led_to_num(tile_num, which_led)
         self.led_manager.set_color(led, r, g, b)
 
+
     #set an animation of a specific led of a specific tile
     def set_tile_led_animation(self, tile_num, which_led, animation):
         led = self.convert_tile_led_to_num(tile_num, which_led)
         self.animation_manager.add_animation(led, animation)
 
+
+    def clear_tile_led_animation(self, tile_num, which_led):
+        led = self.convert_tile_led_to_num(tile_num, which_led)
+        self.animation_manager.remove_animation(led)
+
+
     def read_tile_capacitive_sensor(self, tile_num):
         print("***ERROR: GameBoard.read_tile_capcitive_sensor is not yet implemented")
         return
+
 
     def convert_tile_led_to_num(self, tile_num, which_led):
         return (tile_num * 4) + which_led
