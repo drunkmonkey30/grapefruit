@@ -69,8 +69,7 @@ class GameBoard:
 
 
     def read_tile_capacitive_sensor(self, tile_num):
-        print("***ERROR: GameBoard.read_tile_capcitive_sensor is not yet implemented")
-        return
+        return self.cap_sense.is_sensor_active(tile_num)
 
 
     def convert_tile_led_to_num(self, tile_num, which_led):
