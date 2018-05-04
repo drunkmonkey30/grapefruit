@@ -82,6 +82,11 @@ class LedAnimationManager:
         return
 
 
+    # gets animation on an led
+    def get_animation(self, led_num):
+        return self.led_animations[led_num]
+
+
     # removes all animations associated with an led
     def remove_animation(self, which_led):
         # good coding practices say I should lock this but python is single threaded

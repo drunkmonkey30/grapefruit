@@ -76,6 +76,10 @@ class GameBoard:
         return (tile_num * 4) + which_led
 
 
+    def check_if_led_has_animation(self, tile_num, which_led):
+        return self.animation_manager.check_led_has_anim(self.convert_tile_led_to_num(tile_num, which_led))
+
+
 if __name__ == "__main__":
     print('testing game board api')
 
